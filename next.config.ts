@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',  // Proxy all API routes
-        destination: 'http://127.0.0.1:8000/api/:path*',  // FastAPI backend
+        source: '/api/:path*',
+        destination: 'http://backend:8000/api/:path*', // Use the Docker service name 'backend'
       },
     ];
   },
