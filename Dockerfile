@@ -13,13 +13,13 @@ COPY package.json pnpm-lock.yaml ./
 # Install dependencies using pnpm
 RUN pnpm install
 
-# Copy the rest of the application
+# Copy the rest of the application code
 COPY . .
 
 # Build the Next.js application
-RUN pnpm build  # This step generates the .next directory
+RUN pnpm build  # This ensures the build step generates the .next folder
 
-# Expose the port that the app runs on
+# Expose the port the app runs on
 EXPOSE 3000
 
 # Start the Next.js server
