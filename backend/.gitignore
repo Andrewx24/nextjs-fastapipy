@@ -1,2 +1,5 @@
 
 # github ignore
+
+PyWhatKit_DB.txt
+venv
