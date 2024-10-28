@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 import pywhatkit
 from datetime import datetime, timedelta
 import logging
+import re
 
 app = FastAPI()
 
@@ -21,7 +23,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+class MessageRequest(BaseModel):
+    phone_number: str = Field(..., pattern=r"^\+?\d{10,15}$", description="The phone number in international format, e.g., +1234567890")
+    message: str = Field(..., max_length=500, description="The message content to send")
 @app.get("/")
 async def read_root():
     logger.info("Root endpoint accessed.")
@@ -33,7 +37,10 @@ async def get_data():
     return {"data": "This is the backend API"}
 
 @app.post("/api/send-whatsapp")
-async def send_whatsapp_message(phone_number: str, message: str):
+async def send_whatsapp_message(request: MessageRequest = Body(...)):
+    phone_number = request.phone_number
+    message = request.message
+
     # Calculate a time 2 minutes and 10 seconds from now to send the message
     now = datetime.now()
     send_time = now + timedelta(minutes=2, seconds=10)
@@ -51,9 +58,20 @@ async def send_whatsapp_message(phone_number: str, message: str):
         )
 
         logger.info(f"Message scheduled successfully to {phone_number}")
-        return {"status": "Message scheduled successfully"}
+        return {
+            "status": "Message scheduled successfully",
+            "scheduled_time": send_time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    except pywhatkit.main.WAParNotOpenError:
+        error_message = "WhatsApp Web is not open or not logged in on the device"
+        logger.error(f"Failed to schedule message to {phone_number} - {error_message}")
+        raise HTTPException(status_code=500, detail=error_message)
+    except pywhatkit.main.CallTimeError:
+        error_message = "The scheduled time is invalid. Please try again."
+        logger.error(f"Failed to schedule message to {phone_number} - {error_message}")
+        raise HTTPException(status_code=400, detail=error_message)
     except Exception as e:
-        # Log the error with detailed information
+        # Log any other errors
         error_message = f"Failed to schedule message to {phone_number} - Error: {str(e)}"
         logger.error(error_message)
-        raise HTTPException(status_code=500, detail="An error occurred while scheduling the message")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred while scheduling the message")
