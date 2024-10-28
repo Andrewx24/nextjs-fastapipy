@@ -1,5 +1,13 @@
-
-# github ignore
-
+# Environment and dependency files
 PyWhatKit_DB.txt
-venv
+venv/
+*.env
+*.pyc
+__pycache__/
+
+# IDE or editor-specific files
+.vscode/
+.idea/
+
+# Logs and other unnecessary files
+*.log
